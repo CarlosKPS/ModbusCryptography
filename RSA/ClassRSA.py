@@ -4,14 +4,17 @@ Created on Tue Feb  1 21:13:46 2022
 
 @author: carlo
 """
+#from RSA.Constants import *
+#from RSA.Functions import *
+from timeit import timeit
 from RSA.Constants import *
 from RSA.Functions import *
-from timeit import timeit
+
 
 class CifraRSA():
-    
+
     def __init__(self, p=PRIME1, q=PRIME2,e=None, d=None):
-        
+
         self._p = p
         self._q = q
         self._n = p*q
@@ -27,7 +30,7 @@ class CifraRSA():
             self._d = self.set_d()
         print(bgcd(self._e, self._phin))
     
-    def encryptRSA(self, m, lista = True):
+    def encryptRSA(self, m, lista=True):
         mensagem = ''
         if type(m) == list:
             # primeiramente gera-se um numero binario com a lista e converte para inteiro

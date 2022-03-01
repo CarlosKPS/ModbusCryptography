@@ -6,7 +6,6 @@ Created on Mon Jan 31 23:02:19 2022
 """
 from math import isqrt, floor
 from timeit import timeit
-import numpy as np
 
 def prime_number_list(n):
     """
