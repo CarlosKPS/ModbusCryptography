@@ -1,5 +1,6 @@
-from mchacha.chacha_operations import *
-from mchacha.constants import *
+from Chacha.mchacha.chacha_operations import *
+from Chacha.mchacha.constants import *
+from time import time
 
 
 class ChachaEncrypt:
@@ -14,7 +15,7 @@ class ChachaEncrypt:
         if key is None:
             key = KEY
 
-        self.m_constant = const # magic numbers
+        self.m_constant = const  # magic numbers
         self.key = key  # The algorithm key
         self.nonce = nonce  # o nonce
 
@@ -120,3 +121,93 @@ class ChachaEncrypt:
         print("Número da matrix encriptada gerada: ", self.n_matrix)
         print("Current key: ", self.encrypted_chacha_M[self.key_order[0]][self.key_order[1]])
         print("Encriptações feitas: ")
+
+
+class Chacha20Cifra():
+
+    def __init__(self, n_bits=64, key=None, nonce=None, const=None):
+
+        if nonce is None:
+            nonce = [NONCE0, NONCE1, NONCE2]
+        if const is None:
+            const = [C0, C1, C2, C3]  # Top matrix constants (magic numbers)
+        # values from constructor
+        if key is None:
+            key = KEY
+
+        # setando as constantes da matriz do chacha
+        self._mconstants = const
+        self._key = key
+        self._nonce = nonce
+        self._counter = COUNTER
+
+        # setando aquilo que será cifrado
+        # self._databank = databank
+        self._nbist = n_bits
+
+        # Chave de fluxo inicial
+
+        self._keystream = self.create_key()
+
+        # as cifras utilizadas
+        self._ca = []
+        self._cf = []
+        self._cifra_lista = []
+        self._n = 1
+
+    def create_key(self):
+        """
+        Returns
+        -------
+        A matrix de keystream Chacha20
+
+        """
+        start_time = time()
+        chacha_original = generate_chacha_matrix(self._key, self._counter, self._nonce[0],
+                                                 self._nonce[1], self._nonce[2],
+                                                 self._mconstants[0], self._mconstants[1],
+                                                 self._mconstants[2], self._mconstants[3])
+        chacha_aux = chacha_original
+        for i in range(0, 10):
+            chacha_original = chacha_round(chacha_original)
+
+        self.counter_update()
+        # self._keystream = chacha_original
+        self._keystream = [[chacha_aux[i][j] + chacha_original[i][j] for j in range(0, len(chacha_aux[0]))] for i in
+                           range(0, len(chacha_aux))]
+        self._keystream = ''.join([key for l in chacha_original for key in l]).replace("0b", "")
+        self._keystream = [int(d) for d in self._keystream]
+        print("O tempo para gerar uma matriz é: ", start_time - time())
+        return self._keystream
+
+    def counter_update(self):
+        add = bin(int(self._counter, 2) + 1)
+        diff = abs(len(add) - 34)
+        self._counter = '0b' + '0' * diff + add[2:]
+        return self._counter
+
+    def encrypt(self, pa, pf, c0, e_n=None, e_p=None):
+        """
+        pa: estado anterior
+        pf: estado atual
+        c0: cifra anterior
+        e_n: evento nulo
+        e_p: evento proibido
+        """
+        key = self._keystream[:len(pa)]
+        e_out = event_cd(pa, pf, key, en=e_n, ep=e_p)
+        self._keystream = self._keystream[len(pf):]
+        return [i ^ j for i, j in zip(e_out, c0)]
+
+    def decrypt(self, pa, pf, c0, e_n=None, e_p=None):
+        """
+        pa: estado cifrado anterior
+        pf: estado cifrado atual
+        C0: texto claro anterior
+        e_n: evento nulo
+        e_p: eventro proibido
+        """
+        key = self._keystream[:len(pa)]
+        e_out = event_cd(pa, pf, key, en=e_n, ep=e_p, cd=False)
+        self._keystream = self._keystream[len(pf):]
+        return [i ^ j for i, j in zip(e_out, c0)]
