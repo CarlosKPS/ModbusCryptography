@@ -1,5 +1,6 @@
 from Chacha.mchacha.chacha_operations import *
 from Chacha.mchacha.constants import *
+from Chacha.binaryfunctions.binoperations import *
 from time import time
 
 
@@ -145,9 +146,9 @@ class Chacha20Cifra():
         # self._databank = databank
         self._nbist = n_bits
 
-        # Chave de fluxo inicial
-
-        self._keystream = self.create_key()
+        # Chave de fluxo inicial de 8,192 bits
+        self._keystream = []
+        self.create_initial_key()
 
         # as cifras utilizadas
         self._ca = []
@@ -155,30 +156,53 @@ class Chacha20Cifra():
         self._cifra_lista = []
         self._n = 1
 
-    def create_key(self):
+    def create_initial_key(self):
         """
-        Returns
+        Uma função que cria primeiramente uma chave de fluxo de tamanho
+        Returns: o tempo de execução para gerar a matriz inicial
         -------
         A matrix de keystream Chacha20
 
         """
         start_time = time()
-        chacha_original = generate_chacha_matrix(self._key, self._counter, self._nonce[0],
-                                                 self._nonce[1], self._nonce[2],
-                                                 self._mconstants[0], self._mconstants[1],
-                                                 self._mconstants[2], self._mconstants[3])
-        chacha_aux = chacha_original
-        for i in range(0, 10):
-            chacha_original = chacha_round(chacha_original)
-
-        self.counter_update()
-        # self._keystream = chacha_original
-        self._keystream = [[chacha_aux[i][j] + chacha_original[i][j] for j in range(0, len(chacha_aux[0]))] for i in
-                           range(0, len(chacha_aux))]
-        self._keystream = ''.join([key for l in chacha_original for key in l]).replace("0b", "")
-        self._keystream = [int(d) for d in self._keystream]
-        print("O tempo para gerar uma matriz é: ", start_time - time())
-        return self._keystream
+        for i in range(0, 24*16):
+            # print(i)
+            # ---------------------------------------------------------------------------------------------------------
+            # Monta a matriz chacha20
+            chacha_original = generate_chacha_matrix(self._key, self._counter, self._nonce[0],
+                                                     self._nonce[1], self._nonce[2],
+                                                     self._mconstants[0], self._mconstants[1],
+                                                     self._mconstants[2], self._mconstants[3])
+            # ---------------------------------------------------------------------------------------------------------
+            # Cria uma cópia da matriz original para depois somar com a matriz dos rounds-
+            chacha_aux = chacha_original
+            # ---------------------------------------------------------------------------------------------------------
+            # Demais rounds
+            for i in range(0, 10):
+                chacha_original = chacha_round(chacha_original)
+            # print("O tamanho da matriz", len(chacha_original))
+            # print("o tamanho de uma linha da matriz", len(chacha_original[0]))
+            # print("O tamanho de um elemnto qualquer da matriz", len(chacha_original[0][0]))
+            # print("Um elemento da matriz", chacha_original[0][0])
+            # ---------------------------------------------------------------------------------------------------------
+            # Alterando o contador
+            self.counter_update()
+            # ---------------------------------------------------------------------------------------------------------
+            # aux_key é a keystream (a linha de baixo é a soma da matriz original com a matriz dos rounds)
+            aux_key = [[bit_sum(chacha_aux[i][j], chacha_original[i][j]) for j in range(0, len(chacha_aux[0]))] for i in
+                       range(0, len(chacha_aux))]
+            # print("O tamanho da matriz",len(aux_key))
+            # print("o tamanho de uma linha da matriz", len(aux_key[0]))
+            # print("O tamanho de um elemnto qualquer da matriz", len(aux_key[0][0]))
+            # print("Um elemento da matriz", aux_key[0][0])
+            # Operações para concatenar e posteriormente transformar os binários em listas
+            aux_key = ''.join([key for l in aux_key for key in l]).replace("0b", "")
+            self._keystream += [int(d) for d in aux_key]
+            # ---------------------------------------------------------------------------------------------------------
+        # Medindo e retornando o tempo de execução
+        tempo = start_time - time()
+        # print("O tempo para gerar uma matriz é: ", tempo)
+        return tempo
 
     def counter_update(self):
         add = bin(int(self._counter, 2) + 1)
@@ -193,10 +217,15 @@ class Chacha20Cifra():
         c0: cifra anterior
         e_n: evento nulo
         e_p: evento proibido
+        return: a cifra ou o texto claro.
         """
+        # Seleciona a chave
         key = self._keystream[:len(pa)]
-        e_out = event_cd(pa, pf, key, en=e_n, ep=e_p)
-        self._keystream = self._keystream[len(pf):]
+        e_out = event_cd(pa, pf, key, en=e_n, ep=e_p)  # calcula o evento de saida
+
+        # se não for um evento nulo (se não for repetir o texto cifrado)
+        if e_out != [0] * len(e_out):
+            self._keystream = self._keystream[len(pf):]
         return [i ^ j for i, j in zip(e_out, c0)]
 
     def decrypt(self, pa, pf, c0, e_n=None, e_p=None):
@@ -209,5 +238,6 @@ class Chacha20Cifra():
         """
         key = self._keystream[:len(pa)]
         e_out = event_cd(pa, pf, key, en=e_n, ep=e_p, cd=False)
-        self._keystream = self._keystream[len(pf):]
+        if e_out != [0] * len(e_out):
+            self._keystream = self._keystream[len(pf):]
         return [i ^ j for i, j in zip(e_out, c0)]
