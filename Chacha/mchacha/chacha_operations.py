@@ -135,7 +135,8 @@ def event_cd(u0, u1, k, ep=None,en=None,cd=True):
         aux = ep
         ep = en
         en = aux
-
+    print("u0: ", u0)
+    print("u1: ", u1)
     # If don't have any change among events then return a list of zeros
     if u1==u0:
         print("pa e pf são iguais")
@@ -144,7 +145,7 @@ def event_cd(u0, u1, k, ep=None,en=None,cd=True):
     print("A chave é: ", k)
     # creating entry event
     e0 = [i^j for i,j in zip(u0,u1)]
-    print("Evento de entrada: ", e0)
+    #print("Evento de entrada: ", e0)
     # Creating out  event
     e1 = [m^n for m,n in zip(e0,k)]
     print("evento de saida: ", e1)
@@ -153,5 +154,5 @@ def event_cd(u0, u1, k, ep=None,en=None,cd=True):
         print("xor(ep,k):", [a^b for a,b in zip(ep,k)])
         return [a^b for a,b in zip(ep,k)]
     else:
-        print("evento de saida: ", e1)
+        #print("evento de saida: ", e1)
         return e1

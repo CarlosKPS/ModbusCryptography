@@ -238,6 +238,9 @@ class Chacha20Cifra():
         """
         key = self._keystream[:len(pa)]
         e_out = event_cd(pa, pf, key, en=e_n, ep=e_p, cd=False)
+        print("e_out:", e_out)
+
         if e_out != [0] * len(e_out):
             self._keystream = self._keystream[len(pf):]
+
         return [i ^ j for i, j in zip(e_out, c0)]
