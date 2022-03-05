@@ -114,6 +114,7 @@ class ServidorModbusChacha20():
 
         try:
             self._servidor.start()
+            sleep(10)
             print("Em execução")
             while True:
                 # Pega os estados
@@ -136,11 +137,11 @@ class ServidorModbusChacha20():
                 # Toma o ultimo texto claro
                 self._pa = self._pf
                 print("Ciphertext: {0}    Bits: {1}".format(self._cipher[-1], len(self._cipher[-1])))
-                self._time_list.append((end_time - start_time))  # salvando o tempo de execução
+                self._time_list.append((end_time - start_time)/1e9)  # salvando o tempo de execução
                 # self._tabmodbus.set_bits(0, self._cipher[-1])
                 # self._tabmodbus.set_bits(0, self._cipher[-1]) # Salva os bist na tabela Modbus
                 # self._pa.append(coil_val) # atualiza os valores de Pa
-                sleep(1)
+                sleep(2.5)
         except:
             print("servidor desligado")
 
