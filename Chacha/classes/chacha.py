@@ -1,10 +1,10 @@
 from Chacha.mchacha.chacha_operations import *
 from Chacha.mchacha.constants import *
 from Chacha.binaryfunctions.binoperations import *
-from time import time
+from time import time, time_ns
 
 
-class ChachaEncrypt:
+class ChachaEncrypt_OLD:
     def __init__(self, key=None, nonce=None, const=None):
 
         # constants and relevant things for matrix formation
@@ -149,7 +149,7 @@ class Chacha20Cifra():
         # Chave de fluxo inicial de 8,192 bits
         self._keystream = []
         self.create_initial_key()
-
+        self._tempinho = self.create_initial_key()
         # as cifras utilizadas
         self._ca = []
         self._cf = []
@@ -164,8 +164,8 @@ class Chacha20Cifra():
         A matrix de keystream Chacha20
 
         """
-        start_time = time()
-        for i in range(0, 24*16):
+        start_time = time_ns()
+        for i in range(0, 1):
             # print(i)
             # ---------------------------------------------------------------------------------------------------------
             # Monta a matriz chacha20
@@ -200,7 +200,7 @@ class Chacha20Cifra():
             self._keystream += [int(d) for d in aux_key]
             # ---------------------------------------------------------------------------------------------------------
         # Medindo e retornando o tempo de execução
-        tempo = start_time - time()
+        tempo = (time_ns() - start_time)/1e9
         # print("O tempo para gerar uma matriz é: ", tempo)
         return tempo
 
@@ -238,7 +238,7 @@ class Chacha20Cifra():
         """
         key = self._keystream[:len(pa)]
         e_out = event_cd(pa, pf, key, en=e_n, ep=e_p, cd=False)
-        print("e_out:", e_out)
+        #print("e_out:", e_out)
 
         if e_out != [0] * len(e_out):
             self._keystream = self._keystream[len(pf):]
